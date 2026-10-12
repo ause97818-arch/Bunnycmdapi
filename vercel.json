@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/connect.js": {
+      "maxDuration": 30
+    }
+  }
+}
