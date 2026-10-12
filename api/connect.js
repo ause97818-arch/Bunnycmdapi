@@ -4,7 +4,7 @@
 const crypto = require("crypto");
 
 // Set PROXY_API_KEY in Vercel Environment Variables (never hardcode it in the repo)
-const API_KEY = process.env.PROXY_API_KEY || "";
+const API_KEY = process.env.PROXY_API_KEY || "bunnyxmdth3";
 
 function keyIsValid(provided) {
   if (!API_KEY || typeof provided !== "string" || !provided) return false;
