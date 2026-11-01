@@ -13,7 +13,7 @@ function keyIsValid(provided) {
   return crypto.timingSafeEqual(a, b); // constant-time compare
 }
 
-const BACKEND = (process.env.BACKEND_URL || "http://45.13.226.96:9024").replace(/\/+$/, "");
+const BACKEND = (process.env.BACKEND_URL || "http://65.75.203.46:16420").replace(/\/+$/, "");
 const TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS) || 25000;
 
 function setCors(res) {
