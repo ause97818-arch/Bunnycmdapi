@@ -16,6 +16,13 @@ function keyIsValid(provided) {
 const BACKEND = (process.env.BACKEND_URL || "http://65.75.203.46:16420").replace(/\/+$/, "");
 const TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS) || 25000;
 
+// Node's fetch throws a generic "fetch failed"; the real reason (ECONNREFUSED, ETIMEDOUT, ...) lives in err.cause
+function errCode(err) {
+  return (err && err.cause && (err.cause.code || err.cause.name)) || (err && err.code) || "UNKNOWN";
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -66,11 +73,21 @@ module.exports = async (req, res) => {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const upstream = await fetch(url, {
-      method: "GET",
-      headers: { Accept: "application/json, text/plain, */*" },
-      signal: controller.signal,
-    });
+    let upstream;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        upstream = await fetch(url, {
+          method: "GET",
+          headers: { Accept: "application/json, text/plain, */*" },
+          signal: controller.signal,
+        });
+        break;
+      } catch (e) {
+        if (attempt === 2 || controller.signal.aborted) throw e;
+        console.error("Upstream attempt 1 failed, retrying:", errCode(e));
+        await sleep(600);
+      }
+    }
 
     const body = await upstream.text();
     const contentType = upstream.headers.get("content-type") || "application/json; charset=utf-8";
@@ -79,11 +96,13 @@ module.exports = async (req, res) => {
     return res.status(upstream.status).send(body);
   } catch (err) {
     const timedOut = err && err.name === "AbortError";
-    console.error("Upstream error:", timedOut ? "timeout" : err && err.message);
+    const code = errCode(err);
+    console.error("Upstream error:", timedOut ? "timeout" : err && err.message, "| code:", code);
     // Never leak the backend IP/port in error responses
     return res.status(timedOut ? 504 : 502).json({
       status: false,
       error: timedOut ? "Upstream request timed out." : "Failed to reach upstream service.",
+      code,
     });
   } finally {
     clearTimeout(timer);
