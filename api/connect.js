@@ -13,7 +13,7 @@ function keyIsValid(provided) {
   return crypto.timingSafeEqual(a, b); // constant-time compare
 }
 
-const BACKEND = (process.env.BACKEND_URL || "http://65.75.203.46:16420").replace(/\/+$/, "");
+const BACKEND = (process.env.BACKEND_URL || "http://68.168.30.48:16420").replace(/\/+$/, "");
 const TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS) || 25000;
 
 // Node's fetch throws a generic "fetch failed"; the real reason (ECONNREFUSED, ETIMEDOUT, ...) lives in err.cause
